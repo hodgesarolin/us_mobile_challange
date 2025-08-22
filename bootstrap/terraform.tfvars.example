@@ -1,0 +1,7 @@
+# Copy this file to terraform.tfvars and update the values
+
+aws_account_id = "123456789012"  # CHANGE: Your AWS account ID
+aws_region     = "us-west-2"     # CHANGE: Your preferred region
+
+# Optional: Change if needed
+project_name = "gitops-mvp"

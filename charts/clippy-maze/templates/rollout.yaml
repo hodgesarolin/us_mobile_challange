@@ -1,0 +1,74 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: {{ include "clippy-maze.fullname" . }}
+  labels:
+    {{- include "clippy-maze.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    blueGreen:
+      activeService: {{ include "clippy-maze.fullname" . }}-stable
+      previewService: {{ include "clippy-maze.fullname" . }}-preview
+      autoPromotionEnabled: {{ .Values.blueGreen.autoPromotionEnabled }}
+      scaleDownDelaySeconds: {{ .Values.blueGreen.scaleDownDelaySeconds }}
+      {{- if .Values.blueGreen.prePromotionAnalysis.enabled }}
+      prePromotionAnalysis:
+        templates:
+        - templateName: {{ include "clippy-maze.fullname" . }}-analysis
+        args:
+        - name: service-name
+          value: {{ include "clippy-maze.fullname" . }}-preview
+      {{- end }}
+      {{- if .Values.blueGreen.postPromotionAnalysis.enabled }}
+      postPromotionAnalysis:
+        templates:
+        - templateName: {{ include "clippy-maze.fullname" . }}-analysis
+        args:
+        - name: service-name
+          value: {{ include "clippy-maze.fullname" . }}-stable
+      {{- end }}
+  selector:
+    matchLabels:
+      {{- include "clippy-maze.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "clippy-maze.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.service.port }}
+          name: http
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        {{- if .Values.healthCheck.enabled }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.healthCheck.path }}
+            port: http
+          initialDelaySeconds: {{ .Values.healthCheck.initialDelaySeconds }}
+          periodSeconds: {{ .Values.healthCheck.periodSeconds }}
+          timeoutSeconds: {{ .Values.healthCheck.timeoutSeconds }}
+          successThreshold: {{ .Values.healthCheck.successThreshold }}
+          failureThreshold: {{ .Values.healthCheck.failureThreshold }}
+        {{- end }}
+        {{- if .Values.readinessProbe.enabled }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.readinessProbe.path }}
+            port: http
+          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.readinessProbe.successThreshold }}
+          failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+        {{- end }}
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "{{ .Values.service.port }}"

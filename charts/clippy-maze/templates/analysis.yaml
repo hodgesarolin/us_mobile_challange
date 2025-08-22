@@ -1,0 +1,21 @@
+{{- if .Values.analysis.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: {{ include "clippy-maze.fullname" . }}-analysis
+  labels:
+    {{- include "clippy-maze.labels" . | nindent 4 }}
+spec:
+  args:
+  - name: service-name
+  metrics:
+  - name: http-check
+    interval: {{ .Values.analysis.interval }}
+    count: 3
+    failureLimit: {{ .Values.analysis.failureLimit }}
+    successCondition: result == "true"
+    provider:
+      web:
+        url: "http://{{`{{args.service-name}}`}}:{{ .Values.service.port }}/health"
+        jsonPath: "{$.healthy}"
+{{- end }}

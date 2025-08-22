@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "clippy-maze.fullname" . }}-stable
+  labels:
+    {{- include "clippy-maze.labels" . | nindent 4 }}
+    service-type: stable
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "clippy-maze.selectorLabels" . | nindent 4 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "clippy-maze.fullname" . }}-preview
+  labels:
+    {{- include "clippy-maze.labels" . | nindent 4 }}
+    service-type: preview
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "clippy-maze.selectorLabels" . | nindent 4 }}
