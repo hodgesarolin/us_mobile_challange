@@ -3,7 +3,7 @@ replicaCount: 1
 
 image:
   repository: hodgesarolin/clippy-maze-x86_64
-  tag: v2.0.1
+  tag: v1.0.0
   pullPolicy: IfNotPresent
 
 nameOverride: ""
